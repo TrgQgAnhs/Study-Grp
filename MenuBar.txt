@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Sakana</title>
+	<meta http-quiv="Content-Type" content="text/html; charset=UTF-8"/>
+	<meta name="keywords" content="menubar"/>
+	<meta name="description" content="tạo thẻ menubar"/>
+	<meta name="author" content="TrgQgAnhs"/>
+	<meta http-quiv="refresh" content="10"/>
+	<style>
+		body{
+			padding: 0;
+			margin: 0;
+		}
+		nav{
+			padding: 50px 0;
+			min-width: 500px;
+		}
+		nav ul li{
+			display: inline-block;
+		}
+		nav ul li a{
+			padding: 10px;
+			color: black;
+			font-size: 18px;
+			font-family: Arial;
+			text-decoration: none;
+			display: block;
+		}
+	</style>
+</head>
+<body>
+	<nav>
+		<ul>
+			<li><a href="#">Home</a></li>
+			<li><a href="#">About</a></li>
+			<li><a href="#">New</a></li>
+			<li><a href="#">Product</a></li>
+			<li><a href="#">Contact</a></li>
+		</ul>
+	</nav>
+</body>
+</html>
