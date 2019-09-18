@@ -1,0 +1,309 @@
+Chương trình quản lý bán hàng
+1. Yêu cầu
+  Hệ thống có các chức năng cơ bản như quản lý mặt hàng, quản lý khách hàng, quản lý hóa đơn bán.
+  Cửa hàng có thể có một hoặc nhiều người bán, với mỗi hóa đơn bán hàng phải có thông tin của người bán cho khách hàng cụ thể.
+2. Thiết kế CSDL
+- Tên project: QuanLyBanHang
+- Tạo bảng:
+	- tblChatlieu (Machatlieu nvarchar(50), Tenchatlieu nvarchar(50))
+	- tblKhach (Makhach nvarchar(10), Tenkhach nvarchar(50), Diachi nvarchar(50), Dienthoai nvarchar(15))
+	- tblHang (Mahang nvarchar(50), Tenhang nvarchar(50), MaChatlieu nvarchar(50), Soluong float, Dongianhap float, Dongiaban float, Anh nvarchar(200), Ghichu nvarchar(200))
+	- tblNhanvien (Manhanvien nvarchar(10), Tennhanvien nvarchar(50), Gioitinh nvarchar(10), Diachi nvarchar(50), Dienthoai nvarchar(15), Ngaysinh datetime)
+	- tblHDBan (MaHDBan nvarchar(30), Manhanvien nvarchar(10), Ngayban datetime, Makhach nvarchar(10), Tongtien float)
+	- tblChitietHDBan (MaHDBan nvarchar(30), Mahang nvarchar(50), Soluong float, Dongia float, Giamgia float, Thanhtien float)
+4. Xử lý sự kiện
+khai báo một lớp:
+QuanLyBanHang.Class;
+- Lớp functions
+chứa các phương thức dùng chung
+namespace QuanLyBanHang.Class
+{
+	class Functions
+	{
+		public static SqlConnection Con;
+		public static void Connect()
+		{
+			Con = new SqlConnection();
+			Con.ConnectionString = @"Data Source=.\SQLEXPRESS;AttachDbFilename=" + Application.StartupPath + @'\Quanlybanhang.mdf;Integrated Security=True;Connect Timeout=30;User Instance=True";
+			Con.Open();
+			if(Con.State == ConnectionState.Open)
+				MessageBox.Show("Kết nối thành công");
+			else MessageBox.Show("Không thể kết nối với dữ liệu");
+		}
+		public static void Disconect()
+		{
+			if(Con.State == ConnectionState.Open)
+			{
+				Con.Close();
+				Con.Dispose();
+				Con = null;
+			}
+		}
+	}
+	//frmMain_Load
+	private void frmMain_Load(object sender, EventArgs e)
+	{
+		Class.Functions.Connect();
+	}
+	//mnuThoat_Click
+	private void mnuThoat_Click(object sender, EventArgs e)
+	{
+		Class.Functions.Disconect();
+		Application.Exit();
+	}
+	//Hiển thị các form khác
+	cú pháp:
+	//khởi tạo đối tượng
+	<tên lớp form> <tên đối tương> = new <tên lớp form>();
+	//hiển thị dưới dạng hội thoại
+	<tên đối tượng>.ShowDialog();
+	//hiển thị dạng thông thường
+	<tên đối tượng>.Show();
+	private void mnuChatlieu_Click(object sender, EventArgs e)
+	{
+		frmDMChatlieu frmChatlieu = new frmDMChatlieu();
+		frmChatlieu.ShowDialog();
+	}
+	//sự kiện frmDMChatlieu_Load
+	private void frmDMChatlieu_Load(object sender, EventArgs e)
+	{
+		txtMachatlieu.Enable = false;
+		btnLuu.Enable = false;
+		btnBoqua.Enable = false;
+		LoadDataGridView();
+	}
+	//phương thức LoadDataGridView
+	private void LoadDataGridView()
+	{
+		string sql;
+		sql = "select Machatlieu, Tenchatlieu from tblChatlieu";
+		//đọc dữ liệu từ bảng
+		tblCL = Class.Functions.GetDataToTable();
+		//nguồn dữ liệu
+		DataGridView.DataSource = tblCL;
+		DataGridView.Column[0].HeaderText = "Mã chất liệu";
+		DataGridView.Column[1].HeaderText = "Mã chất liệu";
+		DataGridView.Column[0].Width = 100;
+		DataGridView.Column[1].Width = 300;
+		//không cho người dùng thêm dữ liệu trực tiếp
+		DataGridView.AllowUserToAddRows = false;
+		//không cho sửa dữ liệu trực tiếp
+		DataGridView.EditMode = DataGridViewEditMode.EditProgrammatically;
+	}
+	//phương thức GetDataToTable
+	lấy dữ liệu vào bảng
+	public static DataTable GetDataToTable(string sql)
+	{
+		SqlDataAdapter MyData = new SqlDataAdapter();
+		//tạo đối tượng thuộc lớp SqlCommand
+		MyData.SelectCommand = new SqlCommand();
+		MyData.SelectCommand.Connection = Functions.Con;
+		MyData.SelectCommand.CommandText = sql;
+		DataTable table = new DataTable();
+		MyData.Fill(table);
+		return table;
+	}
+	hoặc viết ngắn gọn
+	public static DataTable GetDataToTable(string sql)
+	{
+		SqlDataAdapter MyData = new SqlDataAdapter(sql,Con);
+		DataTable table = new DataTable();
+		MyData.Fill(table);
+		return table;
+	}
+	//phương thức dataGridView_Click
+	lấy nội dung dòng dữ liệu người dùng chọn trong lưới DataGridView và hiển thị lên các điều khiển trên Form
+	private void dataGridView_Click(object sender, EventArgs e)
+	{
+		if(btnThem.Enable == false)
+		{
+			MessageBox.Show("Đang ở chế độ thêm mới!", "Thông báo", MessageBoxButton.OK, MessageBoxIcon.Information);
+			txtMachatlieu.Focus();
+			return;
+		}
+		if(tblCL.Rows.Count == 0)
+		{
+			MessageBox.Show("Không có dữ liệu!", "Thông báo", MessageBoxButton.OK, MessageBoxIcon.Information);
+			return;
+		}
+		txtMachatlieu.Text = DataGridView.CurrentRow.Cells["Machatlieu"].Value.ToString();
+		txtTenchatlieu.Text = DataGridView.CurrentRow.Cells["Tenchatlieu"].Value.ToString();
+		btnSua.Enable = true;
+		btnXoa.Enable = true;
+		btnBoqua.Enable = true;
+	}
+	//phương thức btnThem_Click
+	private void btnThem_Click(object sender, EventArgs e)
+	{
+		btnSua.Enable = false;
+		btnXoa.Enable = false;
+		btnBoqua.Enable = true;
+		btnLuu.Enable = true;
+		btnThem.Enable = true;
+		btnThem.Enable = false;
+		ResetValue();//xóa trắng textbox
+		txtMachatlieu.Enable = true;//cho phép nhập mới
+		txtMachatlieu.Focus();
+	}
+	private void ResetValue()
+	{
+		txtMachatlieu.Text = "";
+		txtTenchatlieu.Text = "";
+	}
+	//phương thức btnLuu_Click
+	private void btnLuu_Click(object sender, EventArgs e)
+    {
+        string sql; //Lưu lệnh sql
+        if (txtMachatlieu.Text.Trim().Length == 0) //Nếu chưa nhập mã chất liệu
+        {
+            MessageBox.Show("Bạn phải nhập mã chất liệu", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtMachatlieu.Focus();
+            return;
+        }
+        if(txtTenchatlieu.Text.Trim().Length==0) //Nếu chưa nhập tên chất liệu
+        {
+            MessageBox.Show("Bạn phải nhập tên chất liệu", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            txtTenchatlieu.Focus();
+            return;
+        }
+        sql = "Select MaChatlieu From tblChatlieu where MaChatlieu=N'" + txtMachatlieu.Text.Trim() + "'";
+        if (Class.Functions.CheckKey(sql))
+        {
+            MessageBox.Show("Mã chất liệu này đã có, bạn phải nhập mã khác", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            txtMachatlieu.Focus();                
+            return;
+        }
+
+        sql = "INSERT INTO tblChatlieu VALUES(N'" + 
+            txtMachatlieu.Text + "',N'" + txtTenchatlieu.Text +"')";
+        Class.Functions.RunSQL(sql); //Thực hiện câu lệnh sql
+        LoadDataGridView(); //Nạp lại DataGridView
+        ResetValue();
+        btnXoa.Enabled = true;
+        btnThem.Enabled = true;
+        btnSua.Enabled = true;
+        btnBoqua.Enabled = false;
+        btnLuu.Enabled = false;
+        txtMachatlieu.Enabled = false;
+    }
+	//hàm ChecKey
+	//Hàm kiểm tra khoá trùng
+    public static bool CheckKey(string sql)
+    {
+        SqlDataAdapter MyData = new SqlDataAdapter(sql,Con);
+        DataTable table = new DataTable();
+        MyData.Fill(table);
+        if (table.Rows.Count > 0)
+            return true;
+        else return false;
+    }
+	//phương thức RunSQL
+	//Hàm thực hiện câu lệnh SQL
+    public static void RunSQL(string sql)
+    {
+        SqlCommand cmd; //Đối tượng thuộc lớp SqlCommand
+        cmd = new SqlCommand();
+        cmd.Connection = Con; //Gán kết nối
+        cmd.CommandText = sql; //Gán lệnh SQL
+        try
+        {
+            cmd.ExecuteNonQuery(); //Thực hiện câu lệnh SQL
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(ex.ToString());
+        }
+        cmd.Dispose();//Giải phóng bộ nhớ
+        cmd = null;
+    }
+	//phương thức btnSua_Click
+	private void btnSua_Click(object sender, EventArgs e)
+    {
+        string sql; //Lưu câu lệnh sql
+        if (tblCL.Rows.Count == 0)
+        {
+            MessageBox.Show("Không còn dữ liệu", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (txtMachatlieu.Text == "") //nếu chưa chọn bản ghi nào
+        {
+            MessageBox.Show("Bạn chưa chọn bản ghi nào", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (txtTenchatlieu.Text.Trim().Length==0) //nếu chưa nhập tên chất liệu
+        {
+            MessageBox.Show("Bạn chưa nhập tên chất liệu", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        sql = "UPDATE tblChatlieu SET Tenchatlieu=N'" + 
+            txtTenchatlieu.Text.ToString() + 
+            "' WHERE Machatlieu=N'" + txtMachatlieu.Text + "'";
+        Class.Functions.RunSQL(sql);
+        LoadDataGridView();
+        ResetValue();
+
+        btnBoqua.Enabled = false;
+    }
+	//phương thức btnXoa_Click
+	private void btnXoa_Click(object sender, EventArgs e)
+    {
+        string sql;
+        if (tblCL.Rows.Count == 0)
+        {
+            MessageBox.Show("Không còn dữ liệu", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (txtMachatlieu.Text == "") //nếu chưa chọn bản ghi nào
+        {
+            MessageBox.Show("Bạn chưa chọn bản ghi nào", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+        if (MessageBox.Show("Bạn có muốn xoá không?", "Thông báo", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes)
+        {
+            sql = "DELETE tblChatlieu WHERE Machatlieu=N'" + txtMachatlieu.Text + "'";
+            Class.Functions.RunSqlDel(sql);
+            LoadDataGridView();
+            ResetValue();
+        }
+    }
+	//phương thức RunSQLDel
+	public static void RunSqlDel(string sql)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.Connection = Functions.Con;
+        cmd.CommandText = sql;
+        try
+        {
+            cmd.ExecuteNonQuery();
+        }
+        catch (Exception ex)
+        {
+            //MessageBox.Show("Dữ liệu đang được dùng, không thể xoá...", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Stop);
+            MessageBox.Show(ex.ToString());
+        }
+        cmd.Dispose();
+        cmd = null;
+    }
+	//phương thức btnBoqua_Click
+	private void btnBoqua_Click(object sender, EventArgs e)
+    {
+        ResetValue();
+        btnBoqua.Enabled = false;
+        btnThem.Enabled = true;
+        btnXoa.Enabled = true;
+        btnSua.Enabled = true;
+        btnLuu.Enabled = false;
+        txtMachatlieu.Enabled = false;
+    }
+	//phương thức dùng phím enter thay cho phím tab
+	private void txtMachatlieu_KeyUp(object sender, KeyEventArgs e)
+    {
+        if (e.KeyCode == Keys.Enter)
+            SendKeys.Send("{TAB}");
+    }
+	//phương thức btnDong_Click
+	private void btnDong_Click(object sender, EventArgs e)
+    {
+        this.Close();
+    }
+}
